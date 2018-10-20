@@ -15,6 +15,15 @@ JOIN log ON articles.slug = substring(log.path, 10)
 WHERE log.status LIKE '200 OK' GROUP BY authors.name ORDER BY author_views DESC;
 """
 
+ERRORS_QUERY = """
+SELECT * FROM (
+    SELECT to_char(a.day, 'Mon DD, YYYY'), round(cast((100*b.hits) as numeric) / cast(a.hits as numeric), 2) as percent FROM
+        (SELECT date(time) as day, count(*) as hits FROM log GROUP BY day) as a
+        JOIN (SELECT date(time) as day, count(*) as hits FROM log
+            WHERE status like '%404%' GROUP BY day) as b
+                ON a.day = b.day) as t WHERE percent > 1.0;
+"""
+
 
 class Color:
     PURPLE = '\033[95m'
@@ -50,9 +59,18 @@ class Log(object):
             print('"{0}" — {1} views'.format(*author))
         print()
 
+    def get_errors(self):
+        self.c.execute(ERRORS_QUERY)
+        errors = self.c.fetchall()
+        print(Color.RED + "Days did more than 1% of requests lead to errors" + Color.END)
+        for error in errors:
+            print('"{0}" — {1}% errors'.format(*error))
+        print()
+
     def print_log(self):
         self.get_articles()
         self.get_authors()
+        self.get_errors()
 
 
 if __name__ == '__main__':
