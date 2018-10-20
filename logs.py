@@ -5,7 +5,14 @@ CONNECT_STRING = "dbname=news"
 ARTICLES_QUERY = """
 SELECT title, count(*) as article_views FROM articles
 JOIN log ON articles.slug = substring(log.path, 10)
-GROUP BY title ORDER BY article_views DESC LIMIT 3
+GROUP BY title ORDER BY article_views DESC LIMIT 3;
+"""
+
+AUTHORS_QUERY = """
+SELECT authors.name, count(*) as author_views FROM articles
+JOIN authors ON articles.author = authors.id
+JOIN log ON articles.slug = substring(log.path, 10)
+WHERE log.status LIKE '200 OK' GROUP BY authors.name ORDER BY author_views DESC;
 """
 
 
@@ -35,8 +42,17 @@ class Log(object):
             print('"{0}" — {1} views'.format(*article))
         print()
 
+    def get_authors(self):
+        self.c.execute(AUTHORS_QUERY)
+        authors = self.c.fetchall()
+        print(Color.DARKCYAN + "The most popular article authors" + Color.END)
+        for author in authors:
+            print('"{0}" — {1} views'.format(*author))
+        print()
+
     def print_log(self):
         self.get_articles()
+        self.get_authors()
 
 
 if __name__ == '__main__':
