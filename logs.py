@@ -72,9 +72,13 @@ class Log(object):
         self.get_authors()
         self.get_errors()
 
+    def exit(self):
+        self.db.close()
+
 
 if __name__ == '__main__':
     log = Log()
     print(Color.BOLD + 'Log Analysis' + Color.END)
     print(Color.UNDERLINE + '            ' + Color.END)
     log.print_log()
+    log.exit()
