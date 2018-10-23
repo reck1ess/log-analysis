@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import psycopg2
 
 CONNECT_STRING = "dbname=news"
@@ -12,16 +13,20 @@ AUTHORS_QUERY = """
 SELECT authors.name, count(*) as author_views FROM articles
 JOIN authors ON articles.author = authors.id
 JOIN log ON articles.slug = substring(log.path, 10)
-WHERE log.status LIKE '200 OK' GROUP BY authors.name ORDER BY author_views DESC;
+WHERE log.status LIKE '200 OK'
+GROUP BY authors.name ORDER BY author_views DESC;
 """
 
 ERRORS_QUERY = """
 SELECT * FROM (
-    SELECT to_char(a.day, 'Mon DD, YYYY'), round(cast((100*b.hits) as numeric) / cast(a.hits as numeric), 2) as percent FROM
-        (SELECT date(time) as day, count(*) as hits FROM log GROUP BY day) as a
-        JOIN (SELECT date(time) as day, count(*) as hits FROM log
-            WHERE status like '%404%' GROUP BY day) as b
-                ON a.day = b.day) as t WHERE percent > 1.0;
+    SELECT to_char(a.day, 'Mon DD, YYYY'),
+    round(cast((100*b.hits) as numeric) / cast(a.hits as numeric), 2)
+    as percent
+        FROM (SELECT date(time) as day, count(*) as hits FROM log GROUP BY day)
+        as a
+            JOIN (SELECT date(time) as day, count(*) as hits FROM log
+                WHERE status like '%404%' GROUP BY day) as b
+                    ON a.day = b.day) as t WHERE percent > 1.0;
 """
 
 
@@ -62,7 +67,11 @@ class Log(object):
     def get_errors(self):
         self.c.execute(ERRORS_QUERY)
         errors = self.c.fetchall()
-        print(Color.RED + "Days did more than 1% of requests lead to errors" + Color.END)
+        print(
+            Color.RED +
+            "Days did more than 1% of requests lead to errors" +
+            Color.END
+        )
         for error in errors:
             print('"{0}" — {1}% errors'.format(*error))
         print()
